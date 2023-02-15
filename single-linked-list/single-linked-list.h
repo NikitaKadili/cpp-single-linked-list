@@ -88,6 +88,8 @@ class SingleLinkedList {
         // Возвращает ссылку на самого себя
         // Инкремент итератора, не указывающего на существующий элемент списка, приводит к неопределённому поведению
         BasicIterator& operator++() noexcept {
+            assert(node_ != nullptr);
+
             node_ = node_->next_node;
             return *this;
         }
@@ -98,7 +100,7 @@ class SingleLinkedList {
         // приводит к неопределённому поведению
         BasicIterator operator++(int) noexcept {
             auto old_node(*this);
-            node_ = node_->next_node;
+            ++(*this); // Вызов BasicIterator& operator++()
             return old_node;
         }
 
@@ -152,7 +154,9 @@ public:
 
     // Оператор присваивания
     SingleLinkedList& operator=(const SingleLinkedList& rhs) {
-        assert(this->begin() != rhs.begin());
+        if (*this == rhs) {
+            return *this;
+        }
 
         SingleLinkedList temp_list(rhs);
         swap(temp_list);
@@ -258,9 +262,7 @@ public:
 
     // Удаляет первый элемента непустого списка за время O(1)
     void PopFront() noexcept {
-        if (IsEmpty()) {
-            return;
-        }
+        assert(size_ != 0); // Список не должен быть пустым
 
         Node* node_to_delete = head_.next_node;
         head_.next_node = node_to_delete->next_node;
@@ -272,6 +274,8 @@ public:
     // Возвращает итератор на вставленный элемент
     // Время выполнения O(1)
     Iterator InsertAfter(ConstIterator pos, const Type& value) {
+        assert(pos.node_ != nullptr); // Позиция должна быть валидна
+
         Node* prev_ptr = pos.node_;
 
         Node* new_node = new Node(value, prev_ptr->next_node);
@@ -285,11 +289,14 @@ public:
     // Возвращает итератор на элемент, следующий за удалённым
     // Время выполнения O(1)
     Iterator EraseAfter(ConstIterator pos) noexcept {
+        assert(size_ != 0 && pos.node_ != nullptr); // Список не должен быть пуст, позиция должна быть валидна
+
         Node* ptr_to_leave = pos.node_;
         Node* ptr_to_delete = ptr_to_leave->next_node;
 
         ptr_to_leave->next_node = ptr_to_delete->next_node;
         delete ptr_to_delete;
+        --size_;
 
         return Iterator{ ptr_to_leave->next_node };
     }
@@ -322,7 +329,9 @@ void swap(SingleLinkedList<Type>& lhs, SingleLinkedList<Type>& rhs) noexcept {
 // Оператор сравнения SingleLinkedList
 template <typename Type>
 bool operator==(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
-    return std::equal(lhs.begin(), lhs.end(), rhs.begin());
+    return lhs.GetSize() != rhs.GetSize() 
+        ? false 
+        : std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 // Оператор неравенства SingleLinkedList
